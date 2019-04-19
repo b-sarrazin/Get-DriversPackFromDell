@@ -24,7 +24,4 @@ However, for more convenience, it is advisable to modify the following variables
 
 The script performs the following actions:
 
-* Check and install Chocolatey if not present
-* Upgrade all packages
-* Check if packages should be installed based on a text file containing package names
-* Export the list of packages in this text file
+TODO
