@@ -18,10 +18,28 @@ However, for more convenience, it is advisable to modify the following variables
 ### Prerequisites
 
 * Windows 7+ / Windows Server 2003+
-* PowerShell v5+ (Not PowerShell Core yet though)
+* PowerShell v5+
 
 ## Description
 
 The script performs the following actions:
 
-TODO
+This script allows you to download CAB files from Dell.
+
+It is possible to filter according to:
+* computer models
+* operating systems
+* the processor architecture
+* the age of CAB files
+
+## Exemple
+
+Download CAB files less than 12 months
+.\Get-DriversPackFromDell.ps1 -monthsBack 12
+
+Download CAB files less than 6 months corresponding to x86 or x64 architectures and Windows 7 or 10 operating systems :
+.\Get-DriversPackFromDell.ps1 -architectures x86,x64 -operatingSystems Windows10,Windows7 -monthsBack 6
+
+Download CAB files corresponding to models Latitude 7370 or Latitude 7490
+.\Get-DriversPackFromDell.ps1 -models 'Latitude 7370','Latitude 7490'
+
