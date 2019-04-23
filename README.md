@@ -43,3 +43,4 @@ Download CAB files less than 6 months corresponding to x86 or x64 architectures 
 Download CAB files corresponding to models Latitude 7370 or Latitude 7490
 > .\Get-DriversPackFromDell.ps1 -models 'Latitude 7370','Latitude 7490'
 
+*Remember to take advantage of auto-completion, especially for computer models*
