@@ -13,7 +13,7 @@ The following variables can be modified:
 * architectures: filter CAB files according to the requested architectures
 
 The use of parameters is not mandatory. 
-However, for more convenience, it is advisable to modify the following variables directly in the code: $ downloadFolder, $ monthsBack
+However, for more convenience, it is advisable to modify the following variables directly in the code: $downloadFolder, $monthsBack
 
 ### Prerequisites
 
