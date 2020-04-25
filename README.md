@@ -23,14 +23,15 @@ However, for more convenience, it is advisable to modify the following variables
 ## Description
 
 The script performs the following actions:
-
-This script allows you to download CAB files from Dell.
+* download CAB files from Dell
+* skip files already downloaded
+* removes old packages when a new one is downloaded
 
 It is possible to filter according to:
 * computer models
 * operating systems
-* the processor architecture
-* the age of CAB files
+* processor architecture
+* age of CAB files
 
 ## Exemple
 

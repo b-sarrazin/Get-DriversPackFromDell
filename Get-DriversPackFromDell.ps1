@@ -30,7 +30,7 @@ param
 	[Parameter(HelpMessage = 'Driver Pack Catalog download address')]
 	[string]$driverCatalog = 'http://downloads.dell.com/catalog/DriverPackCatalog.cab',
 	[Parameter(HelpMessage = 'path to the CAB file download folder')]
-	[string]$downloadFolder = '\\nas-seg\master_dell\CAB',
+	[string]$downloadFolder = (Join-Path $env:USERPROFILE 'Downloads'),
 	[Parameter(HelpMessage = 'download drivers pack newer than  X month. 0 equal no time limit')]
 	[int]$monthsBack = 0
 )
@@ -218,92 +218,5 @@ PROCESS
 }
 END
 {
-	<#Write-Debug "Download"
-	
-	Get-BitsTransfer |
-	Where-Object { ($_.DisplayName -like "*.CAB") -and ($_.JobState -eq "Suspended") } |
-	ForEach-Object {
-		
-		$transfer = $_ | Add-Member -MemberType NoteProperty -Name loop -Value $false -PassThru
-		
-		Write-Host
-		Write-Host "Downloading the package for $($transfer.Description)"
-		Write-Host "URL : $($transfer.FileList.RemoteName)"
-		
-		Do
-		{
-			if ($simultaneousDownloads -eq 1)
-			{
-				$transfer | Resume-BitsTransfer
-				Write-Host "Package $($transfer.DisplayName) downloaded for $($transfer.Description)" -ForegroundColor Green
-			}
-			elseif ((Get-BitsTransfer |
-					Where-Object { ($transfer.DisplayName -like "*.CAB") -and ($transfer.JobState -like "*ing") } |
-					Measure-Object).Count -lt $simultaneousDownloads)
-			{
-				try
-				{
-					$transfer | Resume-BitsTransfer -Asynchronous
-				}
-				catch
-				{
-					Write-Warning "Failed to download on the package for $($transfer.Description)"
-				}
-			}
-			else # simultaneous downloads reached
-			{
-				if ($transfer.loop)
-				{
-					Write-Host "." -NoNewline
-				}
-				else
-				{
-					Write-Host "$simultaneousDownloads downloads in progress. Waiting" -NoNewline
-					$transfer.loop = $true
-				}
-				Start-Sleep -Seconds 10
-			}
-		}
-		While ($transfer.loop)
-	}
-	
-	While ((Get-BitsTransfer |
-			Where-Object { ($_.DisplayName -like "*.CAB") -and ($_.JobState -eq "Transferred" -or $_.JobState -like "*ing") } |
-			Measure-Object).Count -gt 0)
-	{
-		Get-BitsTransfer |
-		Where-Object { $_.DisplayName -like "*.CAB" -and $_.JobState -eq "Transferred" } |
-		Complete-BitsTransfer
-		Start-Sleep -Seconds 15
-	}
-	
-	Write-Debug "Clean"
-	$transfers = Get-BitsTransfer | Where-Object { $_.DisplayName -like "*.CAB" -and $_.JobState -eq "Transferred" }
-	if ($transfers)
-	{
-		$transfers | ForEach-Object
-		{
-			$displayName = $_.DisplayName
-			$filter = $displayName.Split('-')[0] + "-" + $displayName.Split('-')[1] + "-*-*"
-			
-			Get-Item $(Join-Path $downloadFolder $filter) | Select-Object -ExpandProperty Name |
-			ForEach-Object {
-				
-				Write-Debug "Downloaded drivers pack : $displayName"
-				Write-Debug "Local drivers pack : $_"
-				if ($displayName -gt $_)
-				{
-					try
-					{
-						Write-Host "Removing old package : $_"
-						Remove-Item -Path $(Join-Path $downloadFolder $_) -Force -ErrorAction Stop | Out-Null
-					}
-					catch
-					{
-						Write-Warning "Failed to remove $(Join-Path $downloadFolder $_) : "+$Error[0]
-					}
-				}
-			}
-		}
-	}#>
+
 }
