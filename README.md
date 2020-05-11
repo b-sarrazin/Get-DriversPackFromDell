@@ -33,7 +33,7 @@ It is possible to filter according to:
 * processor architecture
 * age of CAB files
 
-## Exemple
+## Example
 
 Download CAB files less than 12 months old
 > .\Get-DriversPackFromDell.ps1 -monthsBack 12
