@@ -36,12 +36,18 @@ It is possible to filter according to:
 ## Example
 
 Download CAB files less than 12 months old
-> .\Get-DriversPackFromDell.ps1 -monthsBack 12
+```powershell
+.\Get-DriversPackFromDell.ps1 -monthsBack 12
+```
 
 Download CAB files less than 6 months old corresponding to x86 or x64 architectures and Windows 7 or 10 operating systems :
-> .\Get-DriversPackFromDell.ps1 -architectures x86,x64 -operatingSystems Windows10,Windows7 -monthsBack 6
+```powershell
+.\Get-DriversPackFromDell.ps1 -architectures x86,x64 -operatingSystems Windows10,Windows7 -monthsBack 6
+```
 
 Download CAB files corresponding to models Latitude 7370 or Latitude 7490
-> .\Get-DriversPackFromDell.ps1 -models 'Latitude 7370','Latitude 7490'
+```powershell
+.\Get-DriversPackFromDell.ps1 -models 'Latitude 7370','Latitude 7490'
+```
 
 *Remember to take advantage of auto-completion, especially for computer models*
