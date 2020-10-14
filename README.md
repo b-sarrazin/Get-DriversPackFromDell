@@ -12,13 +12,13 @@ The following variables can be modified:
 * operatingSystems: filter CAB files according to the operating systems requested
 * architectures: filter CAB files according to the requested architectures
 
-The use of parameters is not mandatory. 
+The use of parameters is not mandatory.
 However, for more convenience, it is advisable to modify the following variables directly in the code: $downloadFolder, $monthsBack
 
 ### Prerequisites
 
-* Windows 7+ / Windows Server 2003+
-* PowerShell v5+
+* Windows 7+ / Windows Server 2003+ / Linux / MAC
+* PowerShell v1+
 
 ## Description
 
