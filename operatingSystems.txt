@@ -1,0 +1,10 @@
+Vista
+Windows10
+Windows7
+Windows8
+Windows8.1
+winpe10x
+winpe3x
+winpe4x
+winpe5x
+XP

@@ -1,0 +1,276 @@
+Embedded Box PC 3000
+Embedded Box PC 5000
+Latitude 10 - ST2
+Latitude 10 - ST2e
+Latitude 12 Rugged Extreme (7204)
+Latitude 12 Rugged Tablet 7202
+Latitude 13
+Latitude 14 Rugged (5404)
+Latitude 14 Rugged Extreme (7404)
+Latitude 2100
+Latitude 2110
+Latitude 2120
+Latitude 3150
+Latitude 3160
+Latitude 3180
+Latitude 3189
+Latitude 3190
+Latitude 3190 2-in-1
+Latitude 3300
+Latitude 3301
+Latitude 3310
+Latitude 3330
+Latitude 3340
+Latitude 3350
+Latitude 3379
+Latitude 3380
+Latitude 3390 2-in-1
+Latitude 3400
+Latitude 3450
+Latitude 3460
+Latitude 3470
+Latitude 3480
+Latitude 3490
+Latitude 3500
+Latitude 3550
+Latitude 3560
+Latitude 3570
+Latitude 3580
+Latitude 3590
+Latitude 5175
+Latitude 5179
+Latitude 5250
+Latitude 5280
+Latitude 5285
+Latitude 5289
+Latitude 5290
+Latitude 5290 2-IN-1
+Latitude 5300
+Latitude 5300 2-IN-1
+Latitude 5400
+Latitude 5401
+Latitude 5414
+Latitude 5420 Rugged
+Latitude 5424 Rugged
+Latitude 5450
+Latitude 5480
+Latitude 5490
+Latitude 5491
+Latitude 5495
+Latitude 5500
+Latitude 5501
+Latitude 5550
+Latitude 5580
+Latitude 5590
+Latitude 5591
+Latitude 6430U
+Latitude 7200 2-in-1
+Latitude 7212
+Latitude 7214
+Latitude 7220 Rugged Extreme Tablet
+Latitude 7220EX Rugged Extreme Tablet
+Latitude 7250
+Latitude 7275
+Latitude 7280
+Latitude 7285
+Latitude 7290
+Latitude 7300
+Latitude 7350
+Latitude 7370
+Latitude 7380
+Latitude 7389
+Latitude 7390
+Latitude 7390 2-in-1
+Latitude 7400
+Latitude 7400 2-IN-1
+Latitude 7414
+Latitude 7424 Rugged Extreme
+Latitude 7480
+Latitude 7490
+Latitude E4200
+Latitude E4300
+Latitude E4310
+Latitude E5250
+Latitude E5270
+Latitude E5400
+Latitude E5410
+Latitude E5420
+Latitude E5420m
+Latitude E5430-non-vPro
+Latitude E5430-vPro
+Latitude E5440
+Latitude E5450
+Latitude E5470
+Latitude E5500
+Latitude E5510
+Latitude E5520
+Latitude E5520m
+Latitude E5530 non-vPro
+Latitude E5530 vPro
+Latitude E5540
+Latitude E5550
+Latitude E5570
+Latitude E6220
+Latitude E6230
+Latitude E6320
+Latitude E6330
+Latitude E6400
+Latitude E6410
+Latitude E6420
+Latitude E6430
+Latitude E6430s
+Latitude E6440
+Latitude E6500
+Latitude E6510
+Latitude E6520
+Latitude E6530
+Latitude E6540
+Latitude E7240
+Latitude E7250
+Latitude E7270
+Latitude E7440
+Latitude E7450
+Latitude E7470
+Latitude ST
+Latitude XT2
+Latitude XT3
+Latitude Z600
+Optiplex 160
+Optiplex 3010
+Optiplex 3011 AIO
+Optiplex 3020
+Optiplex 3020M
+Optiplex 3030 AIO
+OptiPlex 3040
+OptiPlex 3046
+Optiplex 3050
+Optiplex 3050 AIO
+OptiPlex 3060
+Optiplex 3070
+Optiplex 3240 AIO
+Optiplex 360
+Optiplex 380
+Optiplex 390
+Optiplex 5040
+Optiplex 5050
+OptiPlex 5055 A-Series
+OptiPlex 5055 Ryzen APU
+OptiPlex 5055 Ryzen CPU
+OptiPlex 5060
+Optiplex 5070
+Optiplex 5250 AIO
+OptiPlex 5260 AIO
+Optiplex 5270 AIO
+Optiplex 580
+Optiplex 7010
+Optiplex 7020
+Optiplex 7040
+Optiplex 7050
+OptiPlex 7060
+Optiplex 7070
+OptiPlex 7070 Ultra
+OptiPlex 7071 Tower
+Optiplex 7440 AIO
+Optiplex 7450 AIO
+OptiPlex 7460 AIO
+Optiplex 7470 AIO
+Optiplex 760
+OptiPlex 7760 AIO
+Optiplex 7770 AIO
+Optiplex 780
+Optiplex 790
+Optiplex 9010
+Optiplex 9010 AIO
+Optiplex 9020
+Optiplex 9020 AIO
+Optiplex 9020M
+Optiplex 9030 AIO
+Optiplex 960
+Optiplex 980
+Optiplex 990
+Optiplex XE
+Optiplex XE2
+OptiPlex XE3
+Precision 3430 Tower
+Precision 3431
+Precision 3510
+Precision 3520
+Precision 3530
+Precision 3540
+Precision 3541
+Precision 3630 Tower
+Precision 3930 Rack
+Precision 5510
+Precision 5520
+Precision 5530
+Precision 5530 2-IN-1
+Precision 5540
+Precision 5720 AIO
+Precision 5820 Tower
+Precision 7510
+Precision 7520
+Precision 7530
+Precision 7540
+Precision 7710
+Precision 7720
+Precision 7730
+Precision 7740
+Precision 7820 Tower
+Precision 7920 Rack
+Precision 7920 Tower
+Precision M2400
+Precision M2800
+Precision M3800
+Precision M4400
+Precision M4500
+Precision M4600
+Precision M4700
+Precision M4800
+Precision M6400
+Precision M6500
+Precision M6600
+Precision M6700
+Precision M6800
+Precision R5400
+Precision R5500
+Precision R7610
+Precision Rack 7910
+Precision T1600
+Precision T1650
+Precision T1700
+Precision T3500
+Precision T3600
+Precision T3610
+Precision T5600
+Precision T5610
+Precision T7600
+Precision T7610
+Precision Tower 3420
+Precision Tower 3620
+Precision Tower 5810
+Precision Tower 7810
+Precision Tower 7910
+Precision WorkStation T5500
+Precision WorkStation T7500
+Tablet 5130
+Tablet 5855
+Venue 10 Pro 5056
+Venue 11 Pro 7130
+Venue 11 Pro 7130 vPro
+Venue 11 Pro 7140
+Venue 8 Pro 5830
+XPS 12 9250
+XPS 13 7390
+XPS 13 7390 2-in-1
+XPS 13 9300
+XPS 13 9343
+XPS 13 9350
+XPS 13 9365
+XPS 13 9370
+XPS 13 9380
+XPS 15 7590
+XPS 15 9550
+XPS 15 9570
+XPS 15 9575
+XPS Notebook 9360
+XPS Notebook 9560

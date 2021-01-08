@@ -1,0 +1,4 @@
+*.psbuild
+*.psproj
+*.psprojs
+*.RestorePoint.ps1
