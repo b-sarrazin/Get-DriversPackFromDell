@@ -41,7 +41,11 @@ param
 	[Parameter(HelpMessage = 'Driver Pack Catalog download address')]
 	[string]$DriverCatalog = 'http://downloads.dell.com/catalog/DriverPackCatalog.cab',
 	[Parameter(HelpMessage = 'path to the CAB file download folder')]
+<<<<<<< HEAD
 	[string]$DownloadFolder = '\\nas-seg\master_dell\CAB',
+=======
+	[string]$downloadFolder = (Join-Path $env:USERPROFILE 'Downloads'),
+>>>>>>> 1326bc7fdb7b43f78f7fe2dc6b8bc7e64492cd45
 	[Parameter(HelpMessage = 'download drivers pack newer than  X month. 0 equal no time limit')]
 	[int]$MonthsBack = 0,
 	[Parameter(ParameterSetName = 'UpdateMDT', Mandatory)]
@@ -259,6 +263,7 @@ PROCESS
 }
 END
 {
+<<<<<<< HEAD
 	Write-Debug "Clean"
 	
 	$Filter = "*.CAB"
@@ -289,6 +294,9 @@ END
 			}
 		}
 	}
+=======
+
+>>>>>>> 1326bc7fdb7b43f78f7fe2dc6b8bc7e64492cd45
 }
 
 # SIG # Begin signature block
