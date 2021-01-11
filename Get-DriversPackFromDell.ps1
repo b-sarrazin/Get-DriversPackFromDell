@@ -41,7 +41,7 @@ param
 	[Parameter(HelpMessage = 'Driver Pack Catalog download address')]
 	[string]$DriverCatalog = 'http://downloads.dell.com/catalog/DriverPackCatalog.cab',
 	[Parameter(HelpMessage = 'path to the CAB file download folder')]
-	[string]$downloadFolder = (Join-Path $env:USERPROFILE 'Downloads'),
+	[string]$DownloadFolder = (Join-Path $env:USERPROFILE 'Downloads'),
 	[Parameter(HelpMessage = 'download drivers pack newer than  X month. 0 equal no time limit')]
 	[int]$MonthsBack = 0,
 	[Parameter(ParameterSetName = 'UpdateMDT', Mandatory)]
@@ -231,17 +231,6 @@ PROCESS
 															   -Source $DriversPackURL  `
 															   -Destination $DownloadFolder
 											Write-Host "[OK]" -ForegroundColor Green
-											
-											#region MAJ MDT
-											Write-Host "Expanding package $($DriversPackURL.Split("/")[-1]) for $SupportedModels - $SupportedOSandArch " -NoNewline
-											Expand-Archive -LiteralPath $DownloadFolder\$DriversPackURL.Split("/")[-1] -DestinationPath $DownloadFolder
-											Write-Host "[OK]" -ForegroundColor Green
-											
-											Write-Host "Updating MDT drivers for $SupportedModels - $SupportedOSandArch " -NoNewline
-											$ThisDriversPath = Join-Path $DeploymentShare $DriversPath
-											$ThisDriversPath = Join-Path $ThisDriversPath $($DriversPackURL.Split("/")[-1])
-											Remove-Item -Path $ThisDriversPath
-											#endregion MAJ MDT
 										}
 										catch
 										{
