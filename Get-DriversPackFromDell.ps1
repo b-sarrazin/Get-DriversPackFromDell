@@ -43,15 +43,7 @@ param
 	[Parameter(HelpMessage = 'path to the CAB file download folder')]
 	[string]$DownloadFolder = (Join-Path $env:USERPROFILE 'Downloads'),
 	[Parameter(HelpMessage = 'download drivers pack newer than  X month. 0 equal no time limit')]
-	[int]$MonthsBack = 0,
-	[Parameter(ParameterSetName = 'UpdateMDT', Mandatory)]
-	[switch]$UpdateMDTDrivers,
-	[Parameter(ParameterSetName = 'UpdateMDT')]
-	[string]$Module = "$env:ProgramFiles\Microsoft Deployment Toolkit\Bin\MicrosoftDeploymentToolkit.psd1",
-	[Parameter(ParameterSetName = 'UpdateMDT', Mandatory)]
-	[string]$DeploymentShare,
-	[Parameter(ParameterSetName = 'UpdateMDT')]
-	[string]$DriversPath = "Out-of-Box Drivers"
+	[int]$MonthsBack = 0
 )
 
 DynamicParam

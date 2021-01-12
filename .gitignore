@@ -2,4 +2,5 @@
 *.psproj
 *.psprojs
 *.RestorePoint.ps1
+*.TempPoint.ps1
 Launch.ps1
