@@ -1,31 +1,22 @@
 <#
 	.SYNOPSIS
 		Download CAB file by model, operating system, architecture
-	
+
 	.DESCRIPTION
 		Download CAB file by model, operating system, architecture
-	
+
 	.PARAMETER DriverCatalog
 		Driver Pack Catalog download address
-	
+
 	.PARAMETER DownloadFolder
 		path to the CAB file download folder
-	
+
 	.PARAMETER MonthsBack
 		download drivers pack newer than  X month. 0 equal no time limit
-	
-	.PARAMETER UpdateMDTDrivers
-		A description of the UpdateMDTDrivers parameter.
-	
-	.PARAMETER Module
-		A description of the Module parameter.
-	
-	.PARAMETER DeploymentShare
-		A description of the DeploymentShare parameter.
-	
+
 	.PARAMETER DriversPath
 		A description of the DriversPath parameter.
-	
+
 	.NOTES
 		===========================================================================
 		Created with: 	SAPIEN Technologies, Inc., PowerShell Studio 2018 v5.5.155
@@ -35,235 +26,438 @@
 		Filename:     	Get-DriversPackFromDell
 		===========================================================================
 #>
-[CmdletBinding(DefaultParameterSetName = 'UpdateMDT')]
+[CmdletBinding(SupportsShouldProcess = $true)]
 param
 (
-	[Parameter(HelpMessage = 'Driver Pack Catalog download address')]
+	[Parameter(HelpMessage = @'
+Driver Pack Catalog download address.
+Default is "http://downloads.dell.com/catalog/DriverPackCatalog.cab"
+'@)]
+	[ValidateNotNullOrEmpty()]
 	[string]$DriverCatalog = 'http://downloads.dell.com/catalog/DriverPackCatalog.cab',
-	[Parameter(HelpMessage = 'path to the CAB file download folder')]
-	[string]$DownloadFolder = (Join-Path $env:USERPROFILE 'Downloads'),
-	[Parameter(HelpMessage = 'download drivers pack newer than  X month. 0 equal no time limit')]
-	[int]$MonthsBack = 0
+	[Parameter(HelpMessage = @'
+Path to the folder where the drivers pack will be downloaded.
+Certain variables can be used to sort drivers pack into download folder (but don''t expand variables in the parameter!).
+Default is "$PSScriptRoot\Drivers".
+Example : "C:\PathToScript\Drivers".
+'@)]
+	[ValidateNotNullOrEmpty()]
+	[string]$DownloadFolder = '$PSScriptRoot\Drivers\$($package.OperatingSystems)\$($package.Models)\$($package.Architectures)',
+	[Parameter(HelpMessage = @'
+Folder structure to sort drivers pack into download folder.
+Leave empty to save drivers pack into the root of the download folder.
+Default structure is "$($package.OperatingSystems)\$($package.Models)\$($package.Architectures)".
+Example : "Windows11\Latitude E7470\X64".
+'@)]
+	[string]$DriversStructure = '$($package.OperatingSystems)\$($package.Models)\$($package.Architectures)',
+	[Parameter(HelpMessage = @'
+Download drivers pack newer than  X month.
+Default is 0 (no time limit).
+'@)]
+	[ValidateRange(0, 240)]
+	[int]$MonthsBack = 0,
+	[Parameter(HelpMessage = @'
+Don''t create symbolic link.
+Drivers pack could be downloaded multiple times depending on your folder structure.
+'@)]
+	[switch]$NoSymbolicLink
 )
 
-DynamicParam
-{
-	$ParametersName = 'models', 'operatingSystems', 'architectures'
-	$RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-	
-	foreach ($ParameterName in $ParametersName)
-	{
-		$AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
-		$ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
-		$AttributeCollection.Add($ParameterAttribute)
-		if (Test-Path ".\$ParameterName.txt")
-		{
-			$ArrSet = Get-Content -Path ".\$ParameterName.txt"
+DynamicParam {
+	# Dynamic parameters
+	$parametersName = 'Models', 'OperatingSystems', 'Architectures'
+	$runtimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+
+	foreach ($parameterName in $parametersName) {
+		Write-Debug "Creating dynamic parameter : $parameterName"
+		$attributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+		$parameterAttribute = New-Object System.Management.Automation.parameterAttribute
+		$attributeCollection.Add($parameterAttribute)
+		if (Test-Path "$PSScriptRoot\$parameterName.txt") {
+			$arrSet = Get-Content -Path "$PSScriptRoot\$parameterName.txt"
+		} else {
+			$arrSet = ''
 		}
-		else
-		{
-			$ArrSet = ""
-		}
-		$ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($ArrSet)
-		$AttributeCollection.Add($ValidateSetAttribute)
-		$RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [array], $AttributeCollection)
-		$PSBoundParameters[$ParameterName] = "*"
-		
-		$RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
+		$validateSetAttribute = New-Object System.Management.Automation.validateSetAttribute($arrSet)
+		$attributeCollection.Add($validateSetAttribute)
+		$runtimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($parameterName, [array], $attributeCollection)
+		$PSBoundParameters[$parameterName] = '*'
+
+		$runtimeParameterDictionary.Add($parameterName, $runtimeParameter)
+		Write-Debug "Dynamic parameter created : $parameterName"
 	}
-	return $RuntimeParameterDictionary
+	return $runtimeParameterDictionary
 }
 
-BEGIN
-{
-	Write-Host "Updating models, operating systems and architectures variables " -NoNewline
-	$Models = $PSBoundParameters['Models']
-	$OperatingSystems = $PSBoundParameters['OperatingSystems']
-	$Architectures = $PSBoundParameters['Architectures']
-	Write-Host "[OK]" -ForegroundColor Green
+
+BEGIN {
+	# Check NoSymbolicLink parameter
+	if ($NoSymbolicLink) {
+		Write-Host 'Symbolic link creation is disabled' -ForegroundColor Yellow
+	} else {
+		# Check if the script is running as administrator
+		$isAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match 'S-1-5-32-544')
+		if (-not $script:isAdmin) {
+			Write-Host 'Please run this script as administrator or use -NoSymbolicLink parameter.' -ForegroundColor Red
+			Write-Host 'Administrator privileges are required to create symbolic links.' -ForegroundColor Red
+			#Exit
+			#TODO: Uncomment the line above
+		}
+	}
+
+	# Initialize variables
+	$currentOperation = 0
+	$totalOperations = 0
+	$percentComplete = 0
+
+	Write-Host 'Updating models, operating systems and architectures variables... ' -NoNewline
+	$models = $PSBoundParameters['Models']
+	$operatingSystems = $PSBoundParameters['OperatingSystems']
+	$architectures = $PSBoundParameters['Architectures']
+	Write-Host 'OK' -ForegroundColor Green
+
+	Write-Host 'Checking download folder... ' -NoNewline
+	if (-not (Test-Path $DownloadFolder)) {
+		try {
+			New-Item -Path $DownloadFolder -ItemType Directory -ErrorAction Stop | Out-Null
+			Write-Host 'OK' -ForegroundColor Green
+		} catch {
+			Write-Host 'KO' -ForegroundColor Red
+			Write-Host $_.Exception.Message -ForegroundColor Red
+		}
+	} else {
+		Write-Host 'OK' -ForegroundColor Green
+	}
 }
-PROCESS
-{
-	Write-Host "Downloading Driver Pack Catalog (CAB) from $DriverCatalog " -NoNewline
-	try
-	{
-		$Temp = "$env:TEMP\$([guid]::NewGuid())"
-		New-Item -Path $Temp -ItemType Directory -ErrorAction Stop | Out-Null
-		Start-BitsTransfer -DisplayName "Driver Pack Catalog (CAB)" -Description "$DriverCatalog" -Source $DriverCatalog -Destination $Temp -ErrorAction Stop
-		Write-Host "[OK]" -ForegroundColor Green
+
+
+PROCESS {
+
+	#region functions
+	function Write-MyProgress {
+		param(
+			[Parameter(Mandatory = $true)]
+			[string]$Activity,
+			[Parameter(Mandatory = $false)]
+			[string]$Status
+		)
+
+		$otherOperations = 3
+
+		if ($script:totalOperations -eq 0) {
+			$script:totalOperations = $otherOperations + $catalog.DriverPackManifest.DriverPackage.Count - 1
+		}
+
+		$script:percentComplete = [math]::Round(($script:currentOperation++ / $script:totalOperations) * 100)
+
+		if (!$Status) {
+			$Status = "Step $script:currentOperation / $script:totalOperations"
+		}
+
+		Write-Progress -Activity $Activity -Status $Status -PercentComplete $script:percentComplete
 	}
-	catch
-	{
-		$ExceptionMessage = $_.Exception.Message
-		Write-Host "[KO]" -ForegroundColor Red
-		Write-Host $ExceptionMessage
+
+
+	function Test-PackageHash {
+		[CmdletBinding()]
+		param (
+			[ValidateNotNullOrEmpty()]
+			[string]$FilePath = $package.path,
+			[ValidateNotNullOrEmpty()]
+			[string]$FileHash = $package.hash
+		)
+
+		$myFileHash = Get-FileHash -Algorithm MD5 -Path $FilePath -ErrorAction Stop | Select-Object -ExpandProperty Hash
+		return $myFileHash -eq $FileHash
 	}
-	
-	Write-Host "Expanding Driver Pack Catalog (CAB to XML) " -NoNewline
-	try
-	{
-		$CabCatalog = Join-Path $Temp $DriverCatalog.Split("/")[-1]
-		$OShell = New-Object -ComObject Shell.Application
-		$SourceFile = $OShell.Namespace("$CabCatalog").items()
-		$DestinationFolder = $OShell.Namespace("$Temp")
-		$DestinationFolder.CopyHere($SourceFile)
-		Write-Host "[OK]" -ForegroundColor Green
+
+
+	function Test-ExistingPackage {
+		[CmdletBinding()]
+		param (
+			[ValidateNotNullOrEmpty()]
+			[PSCustomObject]$Package = $package
+		)
+
+		# Check if the package is already downloaded
+		$existingPackages = Get-ChildItem -Path $DownloadFolder -Filter $package.name -Recurse -ErrorAction SilentlyContinue
+		$validPackages = @()
+
+		# Search for the first valid existing package
+		$existingPackages | ForEach-Object {
+			if (Test-PackageHash -FilePath $_.FullName -FileHash $package.hash) {
+				$refPackage = $_
+				Exit
+			}
+		}
+
+		# return $false if no valid existing package
+		if (!$refPackage) {
+			return $false
+		}
+
+		# Iterate existing packages, replace by a copy or link of the reference package
+		$existingPackages | ForEach-Object {
+
+			# Skip the reference package
+			if ($_.FullName -eq $refPackage.FullName) {
+				continue
+			}
+
+
+			# Remove if package file type not match $NoSymbolicLink
+			#TODO: code code code
+
+			# Remove if corrupted
+			if (Test-PackageHash -FilePath $_.FullName -FileHash $package.hash) {
+				Write-Host "Removing corrupted package : $($_.Name)... " -NoNewline
+				Remove-Item -Path $_.FullName -Force -ErrorAction Stop | Out-Null
+				Write-Host 'OK' -ForegroundColor Green
+			}
+
+			if ($NoSymbolicLink) {
+
+				# Copy the reference package
+				Copy-Item -Path $refPackage.FullName -Destination $_.FullName -Force -ErrorAction Stop
+			} else {
+				# Create a symbolic link to the reference package
+				New-Item -ItemType SymbolicLink -Path $_.FullName -Value $refPackage.FullName -Force -ErrorAction Stop
+			}
+		}
 	}
-	catch
-	{
-		$ExceptionMessage = $_.Exception.Message
-		Write-Host "[KO]" -ForegroundColor Red
-		Write-Host $ExceptionMessage
+
+	function Get-Package {
+		[CmdletBinding()]
+		param (
+			[Parameter(Mandatory = $true)]
+			[ValidateNotNullOrEmpty()]
+			[PSCustomObject]$package
+		)
+
+		$bitsTransferProps = @{
+			DisplayName = 'Downloading ' + $package.name + ' for'
+			Description = $package.models + ' - ' + $package.opertaingSystems + ' ' + $package.architectures
+			Source      = $package.uri
+			Destination = $package.path
+		}
+
+		Start-BitsTransfer @bitsTransferProps -ErrorAction Stop
+		Check-PackageHash -package $package -ErrorAction Stop
+		return $true
 	}
-	
-	Write-Debug "Moving Driver Pack Catalog "
-	try
-	{
-		$XmlCatalog = Join-Path $Temp $($SourceFile | Select-Object -ExpandProperty Name)
-		Move-Item -Path $XmlCatalog -Destination $DownloadFolder -Force -ErrorAction Stop
-		$XmlCatalog = Join-Path $DownloadFolder $($SourceFile | Select-Object -ExpandProperty Name)
+
+	#endregion
+
+
+	#region Driver Pack Catalog
+	Write-Host "Downloading Driver Pack Catalog (CAB) from $DriverCatalog... " -NoNewline
+	try {
+		$driverCatalogFilename = Split-Path -Path $DriverCatalog -Leaf
+		$temp = "$env:TEMP\$([guid]::NewGuid())"
+		New-Item -Path $temp -ItemType Directory -ErrorAction Stop | Out-Null
+		Start-BitsTransfer -DisplayName 'Driver Pack Catalog (CAB)' -Description "$DriverCatalog" -Source $DriverCatalog -Destination $temp -ErrorAction Stop
+		Write-Host 'OK' -ForegroundColor Green
+	} catch {
+		Write-Host 'KO' -ForegroundColor Red
+		Write-Host $_.Exception.Message -ForegroundColor Red
 	}
-	catch
-	{
-		$ExceptionMessage = $_.Exception.Message
-		Write-Warning "Failed to move Driver Pack Catalog (ERROR : $ExceptionMessage)"
+
+	Write-Host 'Expanding Driver Pack Catalog (CAB to XML)... ' -NoNewline
+	try {
+		$cabCatalogTempPath = Join-Path -Path $temp -ChildPath $driverCatalogFilename
+		$oShell = New-Object -ComObject Shell.Application
+		$sourceFile = $oShell.Namespace("$cabCatalogTempPath").items()
+		$destinationFolder = $oShell.Namespace("$temp")
+		$destinationFolder.CopyHere($sourceFile)
+		Write-Host 'OK' -ForegroundColor Green
+	} catch {
+		Write-Host 'KO' -ForegroundColor Red
+		Write-Host $_.Exception.Message -ForegroundColor Red
 	}
-	
-	Write-Host "Loading Driver Pack Catalog (XML) " -NoNewline
-	$Catalog = [xml](Get-Content $XmlCatalog)
-	$UrlRoot = "http://" + $($Catalog.DriverPackManifest | Select-Object -ExpandProperty baseLocation)
-	Write-Host "[OK]" -ForegroundColor Green
-	
+
+	Write-Host 'Moving Driver Pack Catalog (XML) to download folder... ' -NoNewline
+	try {
+		$xmlCatalogFilename = $driverCatalogFilename.Replace('.cab', '.xml')
+		$xmlCatalogTempPath = Join-Path -Path $temp -ChildPath $xmlCatalogFilename
+		$xmlCatalogPath = Join-Path -Path $DownloadFolder -ChildPath $xmlCatalogFilename
+		Move-Item -Path $xmlCatalogTempPath -Destination $xmlCatalogPath -ErrorAction Stop -Force | Out-Null
+		Write-Host 'OK' -ForegroundColor Green
+	} catch {
+		Write-Host 'KO' -ForegroundColor Red
+		Write-Host $_.Exception.Message -ForegroundColor Red
+	}
+
+	Write-Host 'Loading Driver Pack Catalog (XML)... ' -NoNewline
+	$catalog = [xml](Get-Content $xmlCatalogPath)
+	$uriRoot = 'http://' + $($catalog.DriverPackManifest | Select-Object -ExpandProperty baseLocation)
+	Write-Host 'OK' -ForegroundColor Green
+	#endregion
+
+
 	#region Create/update attibute set for variables models, operatingSystems, architectures
-	Write-Host "Updating models, operating systems and architectures files " -NoNewline
-	[array]$SupportedModels = @()
-	[array]$SupportedOS = @()
-	[array]$SupportedArch = @()
-	$Catalog.DriverPackManifest.DriverPackage | ForEach-Object {
-		$SupportedModels += $_.SupportedSystems.Brand.Model | Select-Object -ExpandProperty name
-		$SupportedOS += $_.SupportedOperatingSystems.OperatingSystem | Select-Object -ExpandProperty osCode
-		$SupportedArch += $_.SupportedOperatingSystems.OperatingSystem | Select-Object -ExpandProperty osArch
+	Write-MyProgress -Activity 'Updating models, operating systems and architectures variables'
+	Write-Host 'Updating models, operating systems and architectures variables... ' -NoNewline
+	[array]$supportedModels = @()
+	[array]$supportedOS = @()
+	[array]$supportedArch = @()
+	$catalog.DriverPackManifest.DriverPackage | ForEach-Object {
+		$supportedModels += $_.SupportedSystems.Brand.Model | Select-Object -ExpandProperty name
+		$supportedOS += $_.SupportedOperatingSystems.OperatingSystem | Select-Object -ExpandProperty osCode
+		$supportedArch += $_.SupportedOperatingSystems.OperatingSystem | Select-Object -ExpandProperty osArch
 	}
-	$SupportedModels | Select-Object -Unique | Sort-Object | Set-Content .\models.txt
-	$SupportedOS | Select-Object -Unique | Sort-Object | Set-Content .\operatingSystems.txt
-	$SupportedArch | Select-Object -Unique | Sort-Object | Set-Content .\architectures.txt
-	Write-Host "[OK]" -ForegroundColor Green
-	#endregion	
-	
-	$Catalog.DriverPackManifest.DriverPackage | ForEach-Object {
-		
-		$DriversPack = $_
-		
-		if (($MonthsBack -eq 0) `
-			-or ([datetime]$($DriversPack | Select-Object -ExpandProperty dateTime) -ge [datetime]::Today.AddMonths(- $MonthsBack)))
-		{
-			foreach ($Model in $Models)
-			{
-				[array]$SupportedModels = $DriversPack.SupportedSystems.Brand.Model | Select-Object -ExpandProperty name
-				
-				if (($Model -in $SupportedModels) -or ($Model -eq "*"))
-				{
-					Write-Debug "Matching model : $SupportedModels"
-					
-					foreach ($OS in $OperatingSystems)
-					{
-						[array]$SupportedOS = $DriversPack.SupportedOperatingSystems.OperatingSystem | Select-Object -ExpandProperty osCode
-						
-						if (($OS -in $SupportedOS) -or ($OS -eq "*"))
-						{
-							Write-Debug "Matching OS : $SupportedOS"
-							
-							foreach ($Arch in $Architectures)
-							{
-								[array]$SupportedArch = $DriversPack.SupportedOperatingSystems.OperatingSystem | Select-Object -ExpandProperty osArch
-								
-								if (($Arch -in $SupportedArch) -or ($Arch -eq "*"))
-								{
-									Write-Debug "Matching architecture : $SupportedArch"
-									
-									[array]$SupportedOSandArch = @()
-									for ($i = 0; $i -lt $SupportedOS.Count; $i++)
-									{
-										if ($i -eq 0)
-										{
-											$SupportedOSandArch = $SupportedOS[$i].ToString().Trim() + " " + $SupportedArch[$i].ToString().Trim()
-										}
-										else
-										{
-											$SupportedOSandArch += " / " + $SupportedOS[$i].ToString().Trim() + " " + $SupportedArch[$i].ToString().Trim()
-										}
-									}
-									$SupportedOSandArch[-1] = $SupportedOSandArch[-1].ToString().Trim()
-									
-									$AlreadyDownloaded = $false
-									
-									$DriversPackURL = "$UrlRoot/$($DriversPack | Select-Object -ExpandProperty path)"
-									
-									$Filter = $DriversPackURL.Split("/")[-1]
-									$Filter = $Filter.Split('-')[0] + "-" + $Filter.Split('-')[1] + "-*-*"
-									
-									Get-Item $(Join-Path $DownloadFolder $Filter) | Select-Object -ExpandProperty Name |
-									ForEach-Object {
-										if ($DriversPackURL.Split("/")[-1] -eq $_) # already downloaded
-										{
-											$AlreadyDownloaded = $true
-											Write-Host "Package $SupportedModels on $SupportedOSandArch already downloaded " -NoNewline
-											Write-Host "[OK]" -ForegroundColor Green
-											break
-										}
-									}
-									
-									if (-not $AlreadyDownloaded)
-									{
-										try
-										{
-											Write-Host "Downloading package for $SupportedModels - $SupportedOSandArch " -NoNewline
-											Start-BitsTransfer -DisplayName $DriversPackURL.Split("/")[-1]  `
-															   -Description "$SupportedModels - $SupportedOSandArch"  `
-															   -Source $DriversPackURL  `
-															   -Destination $DownloadFolder
-											Write-Host "[OK]" -ForegroundColor Green
-										}
-										catch
-										{
-											Write-Host "[KO]" -ForegroundColor Red
-										}
-									}
-								}
-							}
-						}
-					}
+	$supportedModels | Select-Object -Unique | Sort-Object | Set-Content "$PSScriptRoot\models.txt" -Force
+	$supportedOS | Select-Object -Unique | Sort-Object | Set-Content "$PSScriptRoot\operatingSystems.txt" -Force
+	$supportedArch | Select-Object -Unique | Sort-Object | Set-Content "$PSScriptRoot\architectures.txt" -Force
+	Write-Host 'OK' -ForegroundColor Green
+	#endregion
+
+
+	# Create drivers pack list
+	Write-MyProgress -Activity 'Creating drivers packs list'
+	Write-Host 'Creating drivers packs list... ' -NoNewline
+	$driversPacks = @()
+	$catalog.DriverPackManifest.DriverPackage | ForEach-Object {
+
+		$driversPacks += New-Object PSObject -Property @{
+			name             = $_.Name.Display.'#cdata-section'
+			format           = $_.format
+			version          = $_.dellVersion
+			models           = $_.SupportedSystems.Brand.Model.name | Select-Object -Unique
+			opertaingSystems = $_.SupportedOperatingSystems.OperatingSystem.osCode | Select-Object -Unique
+			architectures    = $_.SupportedOperatingSystems.OperatingSystem.osArch | Select-Object -Unique
+			date             = [datetime]$_.dateTime
+			uri              = $uriRoot + '/' + $_.path
+			path             = Join-Path -Path $DownloadFolder -ChildPath ($ExecutionContext.InvokeCommand.ExpandString($DriversStructure)) -AdditionalChildPath $_.Name.Display.'#cdata-section'
+			hash             = $_.hashMD5
+		}
+	}
+	Write-Host 'OK' -ForegroundColor Green
+
+	# Filter drivers pack by date
+	if ($MonthsBack -gt 0) {
+		Write-MyProgress -Activity 'Filtering drivers pack by date'
+		Write-Host "Filtering drivers pack by date (newer than $MonthsBack month(s))... " -NoNewline
+		$monthsBackDate = [datetime]::Today.AddMonths(- $MonthsBack)
+		$driversPacksBeforeFilter = $driversPacks.Count - 1
+		$driversPacks = $driversPacks | Where-Object { $_.date -ge $monthsBackDate }
+		$currentOperation = $currentOperation + ($driversPacksBeforeFilter - $driversPacks.Count - 1)
+		Write-Host 'OK' -ForegroundColor Green
+	}
+
+	# Filter drivers pack by models, operating systems and architectures
+	foreach ($package in $driversPacks) {
+
+		Write-MyProgress -Activity 'Iterating drivers packages'
+		Write-Host "Package $($package.name)" -ForegroundColor Yellow
+
+		# Filter by models
+		if ($models -ne '*') {
+			Write-Host " - Filtering by models : $($package.models)... " -NoNewline
+			$modelsFound = Compare-Object -ReferenceObject $package.models -DifferenceObject $models -IncludeEqual -ExcludeDifferent | Where-Object { $_.SideIndicator -eq '==' } | Select-Object -ExpandProperty InputObject
+			if (!$modelsFound) {
+				$driversPacks = $driversPacks | Where-Object { $_.name -ne $package.name }
+				Write-Host 'NOT FOUND' -ForegroundColor Yellow
+				continue
+			}
+			Write-Host 'OK' -ForegroundColor Green
+			Write-Debug "Model found : $($modelsFound -join ', ')"
+		}
+
+		# Filter by operating systems
+		if ($operatingSystems -ne '*') {
+			Write-Host " - Filtering by operating systems : $($package.opertaingSystems)... " -NoNewline
+			$operatingSystemsFound = Compare-Object -ReferenceObject $package.opertaingSystems -DifferenceObject $operatingSystems -IncludeEqual -ExcludeDifferent | Where-Object { $_.SideIndicator -eq '==' } | Select-Object -ExpandProperty InputObject
+			if (!$operatingSystemsFound) {
+				Write-Debug "Operating system not found : $($package.opertaingSystems)"
+				$driversPacks = $driversPacks | Where-Object { $_.name -ne $package.name }
+				Write-Host 'NOT FOUND' -ForegroundColor Yellow
+				continue
+			}
+			Write-Host 'OK' -ForegroundColor Green
+			Write-Debug "Operating system found : $($package.opertaingSystems -join ', ')"
+		}
+
+		# Filter by architectures
+		if ($architectures -ne '*') {
+			Write-Host " - Filtering by architectures : $($package.architectures)... " -NoNewline
+			$architecturesFound = Compare-Object -ReferenceObject $package.architectures -DifferenceObject $architectures -IncludeEqual -ExcludeDifferent | Where-Object { $_.SideIndicator -eq '==' } | Select-Object -ExpandProperty InputObject
+			if (!$architecturesFound) {
+				Write-Debug "Architecture not found : $($package.architectures)"
+				$driversPacks = $driversPacks | Where-Object { $_.name -ne $package.name }
+				Write-Host 'NOT FOUND' -ForegroundColor Yellow
+				continue
+			}
+			Write-Host 'OK' -ForegroundColor Green
+			Write-Debug "Architecture found : $($package.architectures)"
+		}
+
+		# All filters are OK
+
+		Write-Host "Downloading package $($package.name)... " -NoNewline
+		# Check if the package is already downloaded
+		#TODO: rename $validPackages to $existingPackage, recreate Test-ExistingPackage function and add a Copy-Package function
+		$validPackages = Test-ExistingPackage
+		if ($validPackages) {
+			Write-Host 'Already downloaded' -ForegroundColor Green
+			continue
+		}
+
+		# Download drivers pack
+		try {
+			$bitsTransferProps = @{
+				DisplayName = 'Downloading ' + $package.name + ' for'
+				Description = $package.models + ' - ' + $package.opertaingSystems + ' ' + $package.architectures
+				Source      = $package.uri
+				Destination = Split-Path -Path $package.path
+				ErrorAction = 'Stop'
+			}
+			if (!(Test-Path $bitsTransferProps.Destination)) {
+				New-Item -Path $bitsTransferProps.Destination -ItemType Directory -ErrorAction Stop | Out-Null
+			}
+			Start-BitsTransfer @bitsTransferProps
+			#TODO: Uncomment the line above
+
+			# Check file hash
+			if (Test-PackageHash) {
+				Write-Host 'OK' -ForegroundColor Green
+			} else {
+				throw "File hash mismatch : $fileHash - $($package.hash)"
+			}
+		} catch {
+			Write-Host 'KO' -ForegroundColor Red
+			Write-Host $_.Exception.Message -ForegroundColor Red
+
+			# Remove corrupted package
+			if (Test-Path $package.path) {
+				try {
+					Write-Host "Removing corrupted package : $($package.name)... "
+					Remove-Item -Path $package.path -Force -ErrorAction Stop | Out-Null
+					Write-Host 'OK' -ForegroundColor Green
+				} catch {
+					Write-Host 'KO' -ForegroundColor Red
+					Write-Host $_.Exception.Message -ForegroundColor Red
 				}
 			}
 		}
 	}
 }
-END
-{
-	Write-Debug "Clean"
-	
-	$Filter = "*.CAB"
+END {
+	$Filter = '*.CAB'
 	$LocalCABs = Get-Item $(Join-Path $DownloadFolder $Filter) | Sort-Object Name | Select-Object -ExpandProperty Name
-	
-	if ($LocalCABs)
-	{
-		foreach ($CurrentCAB in $LocalCABs)
-		{
-			
-			$Filter = $CurrentCAB.Split('-')[0] + "-" + $CurrentCAB.Split('-')[1] + "-*-*"
-			
+
+	if ($LocalCABs) {
+		foreach ($CurrentCAB in $LocalCABs) {
+
+			$Filter = $CurrentCAB.Split('-')[0] + '-' + $CurrentCAB.Split('-')[1] + '-*-*'
+
 			Get-Item $(Join-Path $DownloadFolder $Filter) | Select-Object -ExpandProperty Name |
 			ForEach-Object {
-				
-				if ($CurrentCAB.Split('-')[2] -gt $_.Split('-')[2])
-				{
-					try
-					{
+
+				if ($CurrentCAB.Split('-')[2] -gt $_.Split('-')[2]) {
+					try {
 						Write-Host "Removing old package : $_"
 						Remove-Item -Path $(Join-Path $DownloadFolder $_) -Force -ErrorAction Stop | Out-Null
-					}
-					catch
-					{
+					} catch {
 						Write-Warning "Failed to remove $(Join-Path $DownloadFolder $_) : "+$Error[0]
 					}
 				}

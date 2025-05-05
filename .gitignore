@@ -1,3 +1,5 @@
+*.cab
+*.exe
 *.psbuild
 *.psproj
 *.psprojs
