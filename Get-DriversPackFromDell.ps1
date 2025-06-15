@@ -236,7 +236,7 @@ PROCESS {
 
 		$bitsTransferProps = @{
 			DisplayName = 'Downloading ' + $package.name + ' for'
-			Description = $package.models + ' - ' + $package.opertaingSystems + ' ' + $package.architectures
+			Description = $package.models + ' - ' + $package.operatingSystems + ' ' + $package.architectures
 			Source      = $package.uri
 			Destination = $package.path
 		}
@@ -323,7 +323,7 @@ PROCESS {
 			format           = $_.format
 			version          = $_.dellVersion
 			models           = $_.SupportedSystems.Brand.Model.name | Select-Object -Unique
-			opertaingSystems = $_.SupportedOperatingSystems.OperatingSystem.osCode | Select-Object -Unique
+			operatingSystems = $_.SupportedOperatingSystems.OperatingSystem.osCode | Select-Object -Unique
 			architectures    = $_.SupportedOperatingSystems.OperatingSystem.osArch | Select-Object -Unique
 			date             = [datetime]$_.dateTime
 			uri              = $uriRoot + '/' + $_.path
@@ -365,16 +365,16 @@ PROCESS {
 
 		# Filter by operating systems
 		if ($operatingSystems -ne '*') {
-			Write-Host " - Filtering by operating systems : $($package.opertaingSystems)... " -NoNewline
-			$operatingSystemsFound = Compare-Object -ReferenceObject $package.opertaingSystems -DifferenceObject $operatingSystems -IncludeEqual -ExcludeDifferent | Where-Object { $_.SideIndicator -eq '==' } | Select-Object -ExpandProperty InputObject
+			Write-Host " - Filtering by operating systems : $($package.operatingSystems)... " -NoNewline
+			$operatingSystemsFound = Compare-Object -ReferenceObject $package.operatingSystems -DifferenceObject $operatingSystems -IncludeEqual -ExcludeDifferent | Where-Object { $_.SideIndicator -eq '==' } | Select-Object -ExpandProperty InputObject
 			if (!$operatingSystemsFound) {
-				Write-Debug "Operating system not found : $($package.opertaingSystems)"
+				Write-Debug "Operating system not found : $($package.operatingSystems)"
 				$driversPacks = $driversPacks | Where-Object { $_.name -ne $package.name }
 				Write-Host 'NOT FOUND' -ForegroundColor Yellow
 				continue
 			}
 			Write-Host 'OK' -ForegroundColor Green
-			Write-Debug "Operating system found : $($package.opertaingSystems -join ', ')"
+			Write-Debug "Operating system found : $($package.operatingSystems -join ', ')"
 		}
 
 		# Filter by architectures
@@ -406,7 +406,7 @@ PROCESS {
 		try {
 			$bitsTransferProps = @{
 				DisplayName = 'Downloading ' + $package.name + ' for'
-				Description = $package.models + ' - ' + $package.opertaingSystems + ' ' + $package.architectures
+				Description = $package.models + ' - ' + $package.operatingSystems + ' ' + $package.architectures
 				Source      = $package.uri
 				Destination = Split-Path -Path $package.path
 				ErrorAction = 'Stop'
